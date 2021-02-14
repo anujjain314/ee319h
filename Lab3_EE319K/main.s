@@ -103,14 +103,7 @@ Start
 	 LDR 	R1, [R0]
 	 ORR 	R1, #0x10							; Set PF4 bit to 1 to enable it
 	 STR 	R1, [R0]
-	 
-	 ; trial
-;	 ; Port E
-;	 LDR R0, =GPIO_PORTE_AFSEL_R
-;	 LDR R1, [R0]
-;	 AND R1, #0x00
-;	 STR R1, [R0]
-	 												
+	 					
 	 LDR 	current, THIRTY_PERCENT				; Start with a duty cycle of 30%
 	 LDR 	R0, =GPIO_PORTE_DATA_R				; R0 will hold the address of port E
 	 
@@ -183,13 +176,10 @@ changeDutyCycle
 
 wait
 	 ; wait until PE1 is low
-;	 PUSH	{LR, R12}
 	 LDR 	R1, [R0]
 	 AND 	R4, R1, #0x02
 	 CMP 	R4, #0x02
 	 BEQ	wait
-;	 BL 	controlLED
-;	 POP	{R12, LR}
 
 	 ; check current duty cycle
 	 LDR 	R4, NINETY_PERCENT
