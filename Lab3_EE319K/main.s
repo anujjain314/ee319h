@@ -110,6 +110,12 @@ Start
 	 LDR 	R1, [R0]
 	 ORR 	R1, #0x10							; Set PF4 bit to 1 to enable it
 	 STR 	R1, [R0]
+	 
+	 ; Enable Pull Up Resistor on PE4
+	 LDR	R0, =GPIO_PORTF_PUR_R
+	 LDR 	R1, [R0]
+	 ORR	R1, #0x10
+	 STR	R1,	[R1]
 	 												
 	 LDR 	current, THIRTY_PERCENT				; Start with a duty cycle of 30%
 	 LDR 	R0, =GPIO_PORTE_DATA_R				; R0 will hold the address of port E
