@@ -40,7 +40,8 @@ GPIO_PORTF_DEN_R   EQU 0x4002551C
 GPIO_PORTF_LOCK_R  EQU 0x40025520
 GPIO_PORTF_CR_R    EQU 0x40025524
 GPIO_LOCK_KEY      EQU 0x4C4F434B  ; Unlocks the GPIO_CR register
-SYSCTL_RCGCGPIO_R  EQU 0x400FE608
+SYSCTL_RCGCGPIO_R  EQU 0x400FE608	
+GPIO_PORTE_DR8R_R  EQU 0x40024508
 
 
        IMPORT  TExaS_Init
@@ -98,12 +99,18 @@ Start
 	 ORR 	R1, #0x06							; Set PE1, PE2 bits to 1 to enable them
 	 STR 	R1, [R0]
 	 
+	 ; increase max output current of PE2 to 8 mA
+	 LDR    R0, =GPIO_PORTE_DR8R_R
+	 LDR	R1, [R0]
+	 ORR	R1, #0x04
+	 STR	R1, [R0]
+	 
 	 ; Port F
 	 LDR 	R0, =GPIO_PORTF_DEN_R
 	 LDR 	R1, [R0]
 	 ORR 	R1, #0x10							; Set PF4 bit to 1 to enable it
 	 STR 	R1, [R0]
-	 					
+	 												
 	 LDR 	current, THIRTY_PERCENT				; Start with a duty cycle of 30%
 	 LDR 	R0, =GPIO_PORTE_DATA_R				; R0 will hold the address of port E
 	 
@@ -174,13 +181,13 @@ continue
 ; SUBROUTINE: changeDutyCycle
 changeDutyCycle
 
-wait
-	 ; wait until PE1 is low
+     ; wait until PE1 is low
+wait						
 	 LDR 	R1, [R0]
 	 AND 	R4, R1, #0x02
 	 CMP 	R4, #0x02
-	 BEQ	wait
-
+	 BEQ 	wait
+	 
 	 ; check current duty cycle
 	 LDR 	R4, NINETY_PERCENT
 	 CMP 	current, R4
@@ -196,6 +203,7 @@ resetValue
 	 LDR 	current, TEN_PERCENT 
 	 BX		LR
 
+		  
 	 ALIGN      ; make sure the end of this section is aligned
 	 END        ; end of file
 
