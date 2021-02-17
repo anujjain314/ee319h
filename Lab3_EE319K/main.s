@@ -186,8 +186,10 @@ startBreathing
 	PUSH	{LR, R4}
 
 ; keep track of number of array elements indexed
+startBreathing_init
 	 LDR	R10, SIN_ELEMENTS
-
+	 LDR 	R11, =SinTable
+	 
 continueBreathing
 	 ; turn on LED
 	 LDR 	R1, [R0]
@@ -210,9 +212,10 @@ continueBreathing
 	 BL 	delay
 
 	 ; load new delay from SinTable
-	 ADD 	R11, #1
+	 ADD 	R11, #4
 	 LDR 	R9, [R11]
-	 SUB	R10, #1
+	 SUBS	R10, #1
+	 BEQ	startBreathing_init
 
 	 ; check to see if PF4 is not pressed
 	 LDR 	R1, [R12]
