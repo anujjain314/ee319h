@@ -1,7 +1,7 @@
 ;****************** main.s ***************
-; Program written by: Valvano, solution
+; Program written by: Anuj Jain - EID: , George Koussa - EID: gkk292 
 ; Date Created: 2/4/2017
-; Last Modified: 1/17/2021
+; Last Modified: 2/17/2021
 ; Brief description of the program
 ;   The LED toggles at 2 Hz and a varying duty-cycle
 ; Hardware connections (External: One button and one LED)
@@ -51,6 +51,7 @@ GPIO_PORTE_DR8R_R  EQU 0x40024508
 ;global variables go here
 varDuty  RN 2
 current  RN 3
+maxDelay RN 4
 
        AREA    |.text|, CODE, READONLY, ALIGN=2
        THUMB
@@ -68,6 +69,8 @@ SIN_ELEMENTS	DCD 100
 MAX_SIN_X10		DCD 100000
 
 
+; Table containing a sinusoidal shape. Taken from the EE319k Lab 3 Document
+; https://docs.google.com/document/d/1bPch53jeIG-N8ngwFY4QSMHc90jOngaDXwkYY3XCKr4/edit
 SinTable
   DCD  5000, 5308, 5614, 5918, 6219, 6514, 6804, 7086, 7361, 7626
   DCD  7880, 8123, 8354, 8572, 8776, 8964, 9137, 9294, 9434, 9556
@@ -134,10 +137,8 @@ Start
 	 ORR	R1, #0x10
 	 STR	R1,	[R0]
 
-	 LDR 	current, THIRTY_PERCENT				; Start with a duty cycle of 30%
-	 LDR 	R0,  =GPIO_PORTE_DATA_R				; R0 will hold the address of port E
-	 LDR 	R11, =SinTable						; load address of SinTable
-	 LDR 	R12, =GPIO_PORTF_DATA_R				; R12 will hold the address of port D
+	 LDR 	current, THIRTY_PERCENT				; Start with a duty cycle of 30%, a maxDelay of 0.5 seconds
+	 LDR	maxDelay, TOTAL_DELAY
 
 
 	 ; TExaS voltmeter, scope runs on interrupts
@@ -153,10 +154,16 @@ loop
 	 B  	loop
 
 
-; SUBROUTINE: controlLED
+
+; ----------------------------SUBROUTINE: controlLED------------------------------
+; inputs: current, maxDelay (R2 and R4, respectively)   outputs: none
+
+; A single PWM cycle in which the led is on for a duration specified by current
+; and off for a duration specified by (maxDelay - current).
 controlLED
 
-	 PUSH	{LR, R4}
+	 PUSH	{LR, R0, R1, varDuty}
+     LDR 	R0,  =GPIO_PORTE_DATA_R
 
 	 ; turn on LED
 	 LDR 	R1, [R0]
@@ -173,126 +180,148 @@ controlLED
 	 STR 	R1, [R0]
 
 	 ; low duty cycle
-	 LDR 	R4, TOTAL_DELAY
-	 SUBS  	varDuty, R4, current
+	 SUBS  	varDuty, maxDelay, current
 	 BL 	delay
 
-	 POP	{LR, R4}
+	 POP	{LR, R0, R1, varDuty}
 	 BX		LR
+	 
+; ---------------------------------------------------------------------------------
 
 
-; SUBROUTINE: startBreathing
+
+
+; ----------------------------SUBROUTINE: startBreathing---------------------------
+; inputs: none    outputs: none
+
+; Changes the duty cycle of the led smoothly as to make the LED "breathe"
+; until button PF4 is released.
 startBreathing
 
-	PUSH	{LR, R4}
+	 PUSH	{LR, R1, current, maxDelay, R5, R10, R11, R12}
 
 ; keep track of number of array elements indexed
 startBreathing_init
 	 LDR	R10, SIN_ELEMENTS
 	 LDR 	R11, =SinTable
+	 LDR 	R12, =GPIO_PORTF_DATA_R
 	 
 continueBreathing
-	 ; turn on LED
-	 LDR 	R1, [R0]
-	 ORR 	R1, #0x04
-	 STR 	R1, [R0]
+	 
+	 ; set current and maxDelay for controlLED subroutine, current value loaded from current element of sinTable
+	 MOV	R5, #10	
+	 LDR	current, [R11]		
+	 MUL	current, R5					; Scales up SinTable delay by factor of 10 to decrease frequency
+	 LDR	maxDelay, MAX_SIN_X10
+	 
+	 BL		controlLED
 
-	 ; high duty cycle
-	 LDR	R9, [R11]
-	 MOV	R8, #10			
-	 MUL	R9, R8				; Scales up SinTable delay by factor of 10
-	 MOV 	varDuty, R9
-	 BL 	delay
-
-	 ; turn off LED
-	 LDR 	R1, [R0]
-	 BIC	R1, #0x04
-	 STR 	R1, [R0]
-
-	 ; low duty cycle
-	 LDR 	R4, MAX_SIN_X10
-	 SUBS  	varDuty, R4, R9
-	 BL 	delay
-
-	 ; load new delay from SinTable
+	 ; R11 points to next address in table, if reached end of table - reinitialize registers
 	 ADD 	R11, #4
-	 LDR 	R9, [R11]
 	 SUBS	R10, #1
 	 BEQ	startBreathing_init
 
-	 ; check to see if PF4 is not pressed
+	 ; if PF4 is not pressed - return from subroutine, else continueBreathing
 	 LDR 	R1, [R12]
-	 AND 	R4, R1, #0x10
-	 CMP	R4, #0x00
-	 BEQ	next
-	 POP	{LR, R4}
+	 AND 	R5, R1, #0x10
+	 CMP	R5, #0x00
+	 BEQ	continueBreathing
+
+	 POP	{LR, R1, current, maxDelay, R5, R10, R11, R12}
 	 BX		LR
-
-next
-	 ; check if full breathing cycle completed
-	 CMP 	R10, #0
-	 BEQ	startBreathing
-	 B 		continueBreathing
+	 
+; ---------------------------------------------------------------------------------
 
 
-; SUBROUTINE: delay
+
+
+; -------------------------------SUBROUTINE: delay---------------------------------
+; inputs: varDuty(R2)   outputs: varDuty = 0
+
+; Waits for a time proportional to varDuty.
+
+; Modifies varDuty
 delay
 	 SUBS 	varDuty, varDuty, #1
 	 BNE 	delay
 	 BX 	LR
 
+; ---------------------------------------------------------------------------------
 
-; SUBROUTINE: checkButtons
+
+
+
+; -----------------------------SUBROUTINE: checkButtons----------------------------
+; inputs: none   outputs: none
+
+; Checks relevant buttons and calls the associated subroutines.
 checkButtons
+
+     PUSH	{LR, R0, R1, R12} 
 
 ; Check if PF4 is low, if so, start breathing
 breathingButton
+	 LDR 	R12, =GPIO_PORTF_DATA_R
   	 LDR 	R1, [R12]
-	 AND 	R4, R1, #0x10
-	 CMP	R4, #0x00
+	 AND 	R5, R1, #0x10
+	 CMP	R5, #0x00
 	 BNE	dutyButton
-	 PUSH	{LR, R4}
 	 BL		startBreathing
-	 POP	{LR, R4}
 
 ; Check if PE1 is high, if so call changeDutyCycle subroutine
 dutyButton
+	 LDR 	R0,  =GPIO_PORTE_DATA_R
 	 LDR 	R1, [R0]
-	 AND 	R4, R1, #0x02
-	 CMP 	R4, #0x02
+	 AND 	R5, R1, #0x02
+	 CMP 	R5, #0x02
 	 BNE 	continue
-	 PUSH	{LR, R4}
 	 BL		changeDutyCycle
-	 POP	{LR, R4}
 
 continue
+	 POP	{LR, R0, R1, R12}
 	 BX		LR
 
+; ----------------------------------------------------------------------------------
 
-; SUBROUTINE: changeDutyCycle
+
+
+
+; -----------------------SUBROUTINE: changeDutyCycle -------------------------------
+; inputs: none   outputs: none
+
+; Increases the duty cycle by 20%. Reduces duty cycle to 10% if already at 90%.
 changeDutyCycle
 
+     PUSH   {LR, R0, R1, R5}
+
      ; wait until PE1 is low
+	 LDR 	R0,  =GPIO_PORTE_DATA_R
 wait
 	 LDR 	R1, [R0]
-	 AND 	R4, R1, #0x02
-	 CMP 	R4, #0x02
+	 AND 	R5, R1, #0x02
+	 CMP 	R5, #0x02
 	 BEQ 	wait
 
 	 ; check current duty cycle
-	 LDR 	R4, NINETY_PERCENT
-	 CMP 	current, R4
+	 LDR 	R5, NINETY_PERCENT
+	 CMP 	current, R5
 	 BEQ 	resetValue
 
 	 ; increase duty cycle by 20% if current is not 90%
-	 LDR 	R4, TWENTY_PERCENT
-	 ADD 	current, R4
-	 BX		LR
+	 LDR 	R5, TWENTY_PERCENT
+	 ADD 	current, R5
+	 B		changeDutyCycle_done
 
 	 ; set duty cycle to 10% if current is 90%
 resetValue
 	 LDR 	current, TEN_PERCENT
-	 BX		LR
+	 
+changeDutyCycle_done
+	 POP    {LR, R0, R1, R5}
+	 BX     LR
+	 
+
+; ------------------------------------------------------------------------------------
 
 
 	 ALIGN      ; make sure the end of this section is aligned
