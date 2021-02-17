@@ -49,7 +49,7 @@ GPIO_PORTE_DR8R_R  EQU 0x40024508
        AREA    DATA, ALIGN=2
 
 ;global variables go here
-varDuty RN 2
+varDuty  RN 2
 current  RN 3
 
        AREA    |.text|, CODE, READONLY, ALIGN=2
@@ -65,7 +65,7 @@ NINETY_PERCENT 	DCD 5976000
 TEN_PERCENT 	DCD 664000
 
 SIN_ELEMENTS	DCD 100
-MAX_SIN			DCD 10000
+MAX_SIN_X10		DCD 100000
 
 
 SinTable
@@ -180,6 +180,7 @@ controlLED
 	 POP	{LR, R4}
 	 BX		LR
 
+
 ; SUBROUTINE: startBreathing
 startBreathing
 
@@ -198,6 +199,8 @@ continueBreathing
 
 	 ; high duty cycle
 	 LDR	R9, [R11]
+	 MOV	R8, #10			
+	 MUL	R9, R8				; Scales up SinTable delay by factor of 10
 	 MOV 	varDuty, R9
 	 BL 	delay
 
@@ -207,7 +210,7 @@ continueBreathing
 	 STR 	R1, [R0]
 
 	 ; low duty cycle
-	 LDR 	R4, MAX_SIN
+	 LDR 	R4, MAX_SIN_X10
 	 SUBS  	varDuty, R4, R9
 	 BL 	delay
 
@@ -230,6 +233,7 @@ next
 	 CMP 	R10, #0
 	 BEQ	startBreathing
 	 B 		continueBreathing
+
 
 ; SUBROUTINE: delay
 delay
@@ -263,9 +267,6 @@ dutyButton
 
 continue
 	 BX		LR
-
-
-
 
 
 ; SUBROUTINE: changeDutyCycle
