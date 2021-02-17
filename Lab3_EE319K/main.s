@@ -64,6 +64,23 @@ THIRTY_PERCENT 	DCD 1992000
 NINETY_PERCENT 	DCD 5976000
 TEN_PERCENT 	DCD 664000
 
+SIN_ELEMENTS	DCD 100
+MAX_SIN			DCD 10000
+	
+	
+SinTable
+  DCD  5000, 5308, 5614, 5918, 6219, 6514, 6804, 7086, 7361, 7626
+  DCD  7880, 8123, 8354, 8572, 8776, 8964, 9137, 9294, 9434, 9556
+  DCD  9660, 9746, 9813, 9861, 9890, 9900, 9890, 9861, 9813, 9746
+  DCD  9660, 9556, 9434, 9294, 9137, 8964, 8776, 8572, 8354, 8123
+  DCD  7880, 7626, 7361, 7086, 6804, 6514, 6219, 5918, 5614, 5308
+  DCD  5000, 4692, 4386, 4082, 3781, 3486, 3196, 2914, 2639, 2374
+  DCD  2120, 1877, 1646, 1428, 1224, 1036,  863,  706,  566,  444
+  DCD   340,  254,  187,  139,  110,  100,  110,  139,  187,  254
+  DCD   340,  444,  566,  706,  863, 1036, 1224, 1428, 1646, 1877
+  DCD  2120, 2374, 2639, 2914, 3196, 3486, 3781, 4082, 4386, 4692
+
+
 Start
      ; TExaS_Init sets bus clock at 80 MHz
      BL  TExaS_Init
@@ -110,9 +127,18 @@ Start
 	 LDR 	R1, [R0]
 	 ORR 	R1, #0x10							; Set PF4 bit to 1 to enable it
 	 STR 	R1, [R0]
-	 												
+	 	
+	 ; Enable Pull Up Resistor on PE4
+	 LDR	R0, =GPIO_PORTF_PUR_R
+	 LDR 	R1, [R0]
+	 ORR	R1, #0x10
+	 STR	R1,	[R0]
+
 	 LDR 	current, THIRTY_PERCENT				; Start with a duty cycle of 30%
-	 LDR 	R0, =GPIO_PORTE_DATA_R				; R0 will hold the address of port E
+	 LDR 	R0,  =GPIO_PORTE_DATA_R				; R0 will hold the address of port E
+	 LDR 	R11, =SinTable						; load address of SinTable
+	 LDR 	R12, =GPIO_PORTF_DATA_R				; R12 will hold the address of port D
+	 
 	 
 	 ; TExaS voltmeter, scope runs on interrupts
 	 CPSIE  I    								
@@ -154,6 +180,53 @@ controlLED
 	 POP	{LR, R4}
 	 BX		LR
 	 
+; SUBROUTINE: startBreathing
+startBreathing
+	
+	PUSH	{LR, R4}
+	
+; keep track of number of array elements indexed
+	 LDR	R10, SIN_ELEMENTS
+
+continueBreathing
+	 ; turn on LED
+	 LDR 	R1, [R0]
+	 ORR 	R1, #0x04
+	 STR 	R1, [R0]
+	
+	 ; high duty cycle
+	 LDR	R9, [R11]
+	 MOV 	varDuty, R9
+	 BL 	delay
+	 
+	 ; turn off LED
+	 LDR 	R1, [R0]
+	 BIC	R1, #0x04
+	 STR 	R1, [R0]
+	 
+	 ; low duty cycle
+	 LDR 	R4, MAX_SIN
+	 SUBS  	varDuty, R4, R9
+	 BL 	delay
+	 
+	 ; load new delay from SinTable
+	 ADD 	R11, #1
+	 LDR 	R9, [R11]
+	 SUB	R10, #1
+	 
+	 ; check to see if PF4 is not pressed
+	 LDR 	R1, [R12]
+	 AND 	R4, R1, #0x10
+	 CMP	R4, #0x00
+	 BEQ	next
+	 POP	{LR, R4}
+	 BX		LR
+
+next
+	 ; check if full breathing cycle completed
+	 CMP 	R10, #0
+	 BEQ	startBreathing
+	 B 		continueBreathing
 	 
 ; SUBROUTINE: delay	
 delay
@@ -164,8 +237,19 @@ delay
 
 ; SUBROUTINE: checkButtons
 checkButtons
+
+; Check if PF4 is low, if so, start breathing
+breathingButton
+  	 LDR 	R1, [R12]
+	 AND 	R4, R1, #0x10
+	 CMP	R4, #0x00
+	 BNE	dutyButton
+	 PUSH	{LR, R4}
+	 BL		startBreathing
+	 POP	{LR, R4}
 	 
-	 ; Check if PE1 is high, if so call changeDutyCycle subroutine
+; Check if PE1 is high, if so call changeDutyCycle subroutine
+dutyButton
 	 LDR 	R1, [R0]
 	 AND 	R4, R1, #0x02
 	 CMP 	R4, #0x02
@@ -177,7 +261,10 @@ checkButtons
 continue 
 	 BX		LR
 	 
-	 
+
+
+
+
 ; SUBROUTINE: changeDutyCycle
 changeDutyCycle
 
