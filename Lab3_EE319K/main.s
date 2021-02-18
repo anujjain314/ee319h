@@ -1,5 +1,5 @@
 ;****************** main.s ***************
-; Program written by: Anuj Jain - EID: , George Koussa - EID: gkk292 
+; Program written by: Anuj Jain - EID: aaj2447, George Koussa - EID: gkk292 
 ; Date Created: 2/4/2017
 ; Last Modified: 2/17/2021
 ; Brief description of the program
