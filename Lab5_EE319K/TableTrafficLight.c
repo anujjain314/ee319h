@@ -1,8 +1,8 @@
 // TableTrafficLight.c solution to EE319K Lab 5, spring 2021
 // Runs on TM4C123
 // Moore finite state machine to operate a traffic light.  
-// Daniel Valvano, Jonathan Valvano
-// January 17, 2021
+// Anuj Jain, George Koussa
+// March 10, 2021
 
 /* 
 
@@ -47,20 +47,21 @@ void EnableInterrupts(void);
 void LogicAnalyzerTask(void){
   UART0_DR_R = 0x80|GPIO_PORTB_DATA_R;
 }
-int main(void){ volatile uint32_t delay;
+// run this version in the simulator
+int main(void){volatile uint32_t delay;
   DisableInterrupts();
-  TExaS_Init(&LogicAnalyzerTask);
-  // PLL_Init();     // PLL on at 80 MHz
-  SysTick_Init();   // Initialize SysTick for software waits
-// **************************************************
-// weird old bug in the traffic simulator
-// run next two lines on real board to turn on F E B clocks
-//  SYSCTL_RCGCGPIO_R |= 0x32;  // real clock register 
-//  while((SYSCTL_PRGPIO_R&0x32)!=0x32){};
-// run next two lines on simulator to turn on F E B clocks
-  SYSCTL_RCGC2_R |= 0x32;  // LM3S legacy clock register
+  //TExaS_Init(&LogicAnalyzerTask);
+  PLL_Init(); // PLL on at 80 MHz
+  SYSCTL_RCGC2_R |= 0x32; // Ports B,E,F
   delay = SYSCTL_RCGC2_R;
-// **************************************************
+
+//// run this version on the board
+//int main(void){volatile uint32_t delay;
+//  DisableInterrupts();
+//  TExaS_Init(&LogicAnalyzerTask);
+//  //PLL_Init(); // PLL on at 80 MHz
+//  SYSCTL_RCGC2_R |= 0x32; // Ports B,E,F
+//  delay = SYSCTL_RCGC2_R;
  
   EnableInterrupts();
     
