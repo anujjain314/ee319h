@@ -18,8 +18,6 @@
  http://users.ece.utexas.edu/~valvano/
  */
 
-// east/west green light connected to PB3
-// north/south facing red light connected to PB2
 // red south light connected to PE5
 // yellow south light connected to PE4
 // green south light connected to PE3
