@@ -18,15 +18,19 @@
  http://users.ece.utexas.edu/~valvano/
  */
 
-// east/west red light connected to PB5
-// east/west yellow light connected to PB4
 // east/west green light connected to PB3
 // north/south facing red light connected to PB2
-// north/south facing yellow light connected to PB1
-// north/south facing green light connected to PB0
-// pedestrian detector connected to PE2 (1=pedestrian present)
-// north/south car detector connected to PE1 (1=car present)
-// east/west car detector connected to PE0 (1=car present)
+// red south light connected to PE5
+// yellow south light connected to PE4
+// green south light connected to PE3
+// red west light connected to PE2
+// yellow west light connected to PE1
+// green west light connected to PE0
+
+// walk sensor connected to PA4
+// south sensor connected to PA3
+// west sensor connected to PA2
+
 // "walk" light connected to PF3-1 (built-in white LED)
 // "don't walk" light connected to PF1 (built-in red LED)
 #include <stdint.h>
@@ -39,37 +43,60 @@
 void DisableInterrupts(void);
 void EnableInterrupts(void);
 
-#define PB543210                (*((volatile uint32_t *)0x400050FC)) // bits 5-0
-#define PE210                   (*((volatile uint32_t *)0x4002401C)) // bits 2-0
+#define PE543210                (*((volatile uint32_t *)0x400240FC)) // bits 5-0
+#define PA432                   (*((volatile uint32_t *)0x40004070)) // bits 2-4
 #define PF321                   (*((volatile uint32_t *)0x40025038)) // bits 3-1
+
+typedef const struct State State_t;
+struct State {
+	uint32_t wait;
+	uint32_t output;
+	State_t *next[8];
+}; 
 
 
 void LogicAnalyzerTask(void){
-  UART0_DR_R = 0x80|GPIO_PORTB_DATA_R;
+  UART0_DR_R = 0x80|GPIO_PORTB_DATA_R;		// do i need to activate port b clock?
 }
-// run this version in the simulator
-int main(void){volatile uint32_t delay;
-  DisableInterrupts();
-  //TExaS_Init(&LogicAnalyzerTask);
-  PLL_Init(); // PLL on at 80 MHz
-  SYSCTL_RCGC2_R |= 0x32; // Ports B,E,F
-  delay = SYSCTL_RCGC2_R;
 
-//// run this version on the board
-//int main(void){volatile uint32_t delay;
-//  DisableInterrupts();
-//  TExaS_Init(&LogicAnalyzerTask);
-//  //PLL_Init(); // PLL on at 80 MHz
-//  SYSCTL_RCGC2_R |= 0x32; // Ports B,E,F
-//  delay = SYSCTL_RCGC2_R;
+void GPIO_Init(){ volatile uint32_t delay;
+		SYSCTL_RCGC2_R |= 0x11;  		// LM3S legacy clock register, turn on port A,E Clock
+		delay = SYSCTL_RCGC2_R;
+	
+		GPIO_PORTA_DEN_R |= 0x1C;		// Enable Pins A2-A4, E0-E5
+		GPIO_PORTE_DEN_R |= 0x3F;
+		
+		GPIO_PORTA_DIR_R &= ~0x1C;	// make A2-A4 inputs
+		GPIO_PORTE_DIR_R |= 0x3F;		// make E0-E5 outputs
+	
+		GPIO_PORTA_PDR_R |= 0x1C;		// activate internal PDR for switch inputs
+}
+
+int main(void){
+	GPIO_Init();
+	
+  DisableInterrupts();
+  TExaS_Init(&LogicAnalyzerTask);
+  // PLL_Init();     // PLL on at 80 MHz
+  SysTick_Init();   // Initialize SysTick for software waits
+// **************************************************
+// weird old bug in the traffic simulator
+// run next two lines on real board to turn on F E B clocks
+//  SYSCTL_RCGCGPIO_R |= 0x32;  // real clock register 
+//  while((SYSCTL_PRGPIO_R&0x32)!=0x32){};
+// run next two lines on simulator to turn on F E B clocks
+// **************************************************
  
   EnableInterrupts();
+	
+	//FMS ENGINE
+	
+	State_t* currentState; // need to initialize
     
   while(1){
-// output
-// wait
-// input
-// next	
+		PE543210 = currentState -> output;	
+		SysTick_Wait10ms(currentState -> wait);
+		currentState = currentState -> next[PA432];
   }
 }
 
