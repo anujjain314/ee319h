@@ -48,10 +48,55 @@ void EnableInterrupts(void);
 typedef const struct State State_t;
 struct State {
 	uint32_t wait;
-	uint32_t output;
+	uint32_t outputTraffic;
+	uint32_t outputWalk;
 	State_t *next[8];
 }; 
 
+
+#define start 			&FSM[0]
+#define walk 				&FSM[1]
+#define walkWarn1 	&FSM[2]
+#define walkOff1 		&FSM[3]
+#define walkWarn2 	&FSM[4]
+#define walkOff2 		&FSM[5]
+#define walkWarn3 	&FSM[6]
+#define southG			&FSM[7]
+#define southY			&FSM[8]
+#define southR			&FSM[9]
+#define westG				&FSM[10]
+#define westY				&FSM[11]
+#define westR				&FSM[12]
+
+
+State_t FSM[13] = {
+	// start
+	{100, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}},
+	// walk
+	{100, 0x24, 0x0E, {walkWarn1, walk, walkWarn1, walkWarn1, walkWarn1, walkWarn1, walkWarn1, walkWarn1}},
+	// walkWarn1
+	{100, 0x24, 0x02, { walkOff1 }},
+	// walkOff1
+	{100, 0x24, 0x0E, { walkWarn2 }},
+	// walkWarn2
+	{100, 0x24, 0x02, { walkOff2 }},
+	// walkOff2
+	{100, 0x24, 0x0E, { walkWarn3 }},
+	// walkWarn3
+	{100, 0x24, 0x02, {start, westG, southG, southG, walk, westG, southG, southG}},
+	// southG
+	{100, 0x0C, 0x02, {southY, southY, southG, southY, southY, southY, southY, southY}},
+	// southY
+	{100, 0x14, 0x02, { southR }},
+	// southR
+	{100, 0x24, 0x02, {start, westG, southG, westG, walk, westG, walk, westG}},
+	// westG
+	{100, 0x21, 0x02, {westY, westG, westY, westY, westY, westY, westY, westY}},
+	// westY
+	{100, 0x22, 0x02, { westR }},
+	// westR
+	{100, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}}
+};
 
 void LogicAnalyzerTask(void){
   UART0_DR_R = 0x80|GPIO_PORTB_DATA_R;		// do i need to activate port b clock?
@@ -92,9 +137,11 @@ int main(void){
 	State_t* currentState; // need to initialize
     
   while(1){
-		PE543210 = currentState -> output;	
+		PE543210 = currentState -> outputTraffic;	
+		PF321 = currentState -> outputWalk;
 		SysTick_Wait10ms(currentState -> wait);
-		currentState = currentState -> next[PA432];
+		uint8_t input = PA432 >> 2;
+		currentState = currentState -> next[input];
   }
 }
 
