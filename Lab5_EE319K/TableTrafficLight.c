@@ -26,8 +26,8 @@
 // green west light connected to PE0
 
 // walk sensor connected to PA4
-// south sensor connected to PA3
-// west sensor connected to PA2
+// west sensor connected to PA3
+// south sensor connected to PA2
 
 // "walk" light connected to PF3-1 (built-in white LED)
 // "don't walk" light connected to PF1 (built-in red LED)
@@ -71,31 +71,31 @@ struct State {
 
 State_t FSM[13] = {
 	// start
-	{100, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}},
+	{10, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}},
 	// walk
-	{100, 0x24, 0x0E, {walkWarn1, walk, walkWarn1, walkWarn1, walkWarn1, walkWarn1, walkWarn1, walkWarn1}},
+	{10, 0x24, 0x0E, {walkWarn1, walkWarn1, walkWarn1, walkWarn1, walk, walkWarn1, walkWarn1, walkWarn1}},
 	// walkWarn1
-	{100, 0x24, 0x02, { walkOff1 }},
+	{10, 0x24, 0x02, {walkOff1, walkOff1 , walkOff1 , walkOff1, walkOff1, walkOff1, walkOff1, walkOff1}},
 	// walkOff1
-	{100, 0x24, 0x0E, { walkWarn2 }},
+	{10, 0x24, 0x0E, {walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2}},
 	// walkWarn2
-	{100, 0x24, 0x02, { walkOff2 }},
+	{10, 0x24, 0x02, {walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2}},
 	// walkOff2
-	{100, 0x24, 0x0E, { walkWarn3 }},
+	{10, 0x24, 0x0E, {walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3}},
 	// walkWarn3
-	{100, 0x24, 0x02, {start, westG, southG, southG, walk, westG, southG, southG}},
+	{10, 0x24, 0x02, {start, westG, southG, southG, walk, westG, southG, southG}},
 	// southG
-	{100, 0x0C, 0x02, {southY, southY, southG, southY, southY, southY, southY, southY}},
+	{10, 0x0C, 0x02, {southY, southY, southG, southY, southY, southY, southY, southY}},
 	// southY
-	{100, 0x14, 0x02, { southR }},
+	{10, 0x14, 0x02, {southR, southR, southR, southR, southR, southR, southR, southR}},
 	// southR
-	{100, 0x24, 0x02, {start, westG, southG, westG, walk, westG, walk, westG}},
+	{10, 0x24, 0x02, {start, westG, southG, westG, walk, westG, walk, westG}},
 	// westG
-	{100, 0x21, 0x02, {westY, westG, westY, westY, westY, westY, westY, westY}},
+	{10, 0x21, 0x02, {westY, westG, westY, westY, westY, westY, westY, westY}},
 	// westY
-	{100, 0x22, 0x02, { westR }},
+	{10, 0x22, 0x02, {westR, westR, westR, westR, westR, westR, westR, westR}},
 	// westR
-	{100, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}}
+	{10, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}}
 };
 
 void LogicAnalyzerTask(void){
@@ -103,14 +103,16 @@ void LogicAnalyzerTask(void){
 }
 
 void GPIO_Init(){ volatile uint32_t delay;
-		SYSCTL_RCGC2_R |= 0x11;  		// LM3S legacy clock register, turn on port A,E Clock
+		SYSCTL_RCGC2_R |= 0x31;  		// LM3S legacy clock register, turn on port A,E, F Clock
 		delay = SYSCTL_RCGC2_R;
 	
 		GPIO_PORTA_DEN_R |= 0x1C;		// Enable Pins A2-A4, E0-E5
 		GPIO_PORTE_DEN_R |= 0x3F;
+		GPIO_PORTF_DEN_R |= 0x0E;
 		
 		GPIO_PORTA_DIR_R &= ~0x1C;	// make A2-A4 inputs
 		GPIO_PORTE_DIR_R |= 0x3F;		// make E0-E5 outputs
+		GPIO_PORTF_DIR_R |= 0x0E;		// make F1-F3 outputs
 	
 		GPIO_PORTA_PDR_R |= 0x1C;		// activate internal PDR for switch inputs
 }
@@ -136,6 +138,8 @@ int main(void){
 	
 	State_t* currentState; // need to initialize
     
+	currentState = start;
+	
   while(1){
 		PE543210 = currentState -> outputTraffic;	
 		PF321 = currentState -> outputWalk;
