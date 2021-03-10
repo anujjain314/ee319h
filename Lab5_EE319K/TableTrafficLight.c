@@ -71,39 +71,39 @@ struct State {
 
 State_t FSM[13] = {
 	// start
-	{10, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}},
+	{100, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}},
 	// walk
-	{10, 0x24, 0x0E, {walkWarn1, walkWarn1, walkWarn1, walkWarn1, walk, walkWarn1, walkWarn1, walkWarn1}},
+	{100, 0x24, 0x0E, {walkWarn1, walkWarn1, walkWarn1, walkWarn1, walk, walkWarn1, walkWarn1, walkWarn1}},
 	// walkWarn1
-	{10, 0x24, 0x02, {walkOff1, walkOff1 , walkOff1 , walkOff1, walkOff1, walkOff1, walkOff1, walkOff1}},
+	{25, 0x24, 0x02, {walkOff1, walkOff1 , walkOff1 , walkOff1, walkOff1, walkOff1, walkOff1, walkOff1}},
 	// walkOff1
-	{10, 0x24, 0x0E, {walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2}},
+	{25, 0x24, 0x00, {walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2, walkWarn2}},
 	// walkWarn2
-	{10, 0x24, 0x02, {walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2}},
+	{25, 0x24, 0x02, {walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2, walkOff2}},
 	// walkOff2
-	{10, 0x24, 0x0E, {walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3}},
+	{25, 0x24, 0x00, {walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3, walkWarn3}},
 	// walkWarn3
-	{10, 0x24, 0x02, {start, westG, southG, southG, walk, westG, southG, southG}},
+	{100, 0x24, 0x02, {start, westG, southG, southG, walk, westG, southG, southG}},
 	// southG
-	{10, 0x0C, 0x02, {southY, southY, southG, southY, southY, southY, southY, southY}},
+	{100, 0x0C, 0x02, {southY, southY, southG, southY, southY, southY, southY, southY}},
 	// southY
-	{10, 0x14, 0x02, {southR, southR, southR, southR, southR, southR, southR, southR}},
+	{100, 0x14, 0x02, {southR, southR, southR, southR, southR, southR, southR, southR}},
 	// southR
-	{10, 0x24, 0x02, {start, westG, southG, westG, walk, westG, walk, westG}},
+	{100, 0x24, 0x02, {start, westG, southG, westG, walk, westG, walk, westG}},
 	// westG
-	{10, 0x21, 0x02, {westY, westG, westY, westY, westY, westY, westY, westY}},
+	{100, 0x21, 0x02, {westY, westG, westY, westY, westY, westY, westY, westY}},
 	// westY
-	{10, 0x22, 0x02, {westR, westR, westR, westR, westR, westR, westR, westR}},
+	{100, 0x22, 0x02, {westR, westR, westR, westR, westR, westR, westR, westR}},
 	// westR
-	{10, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}}
+	{100, 0x24, 0x02, {start, westG, southG, southG, walk, walk, walk, walk}}
 };
 
 void LogicAnalyzerTask(void){
-  UART0_DR_R = 0x80|GPIO_PORTB_DATA_R;		// do i need to activate port b clock?
+  UART0_DR_R = 0x80|GPIO_PORTE_DATA_R;
 }
 
 void GPIO_Init(){ volatile uint32_t delay;
-		SYSCTL_RCGC2_R |= 0x31;  		// LM3S legacy clock register, turn on port A,E, F Clock
+		SYSCTL_RCGC2_R |= 0x31;  		// LM3S legacy clock register, turn on port A,E,F Clock
 		delay = SYSCTL_RCGC2_R;
 	
 		GPIO_PORTA_DEN_R |= 0x1C;		// Enable Pins A2-A4, E0-E5
@@ -118,11 +118,11 @@ void GPIO_Init(){ volatile uint32_t delay;
 }
 
 int main(void){
+	// Initialization
 	GPIO_Init();
-	
   DisableInterrupts();
   TExaS_Init(&LogicAnalyzerTask);
-  // PLL_Init();     // PLL on at 80 MHz
+  //PLL_Init();     // PLL on at 80 MHz
   SysTick_Init();   // Initialize SysTick for software waits
 // **************************************************
 // weird old bug in the traffic simulator
@@ -130,15 +130,11 @@ int main(void){
 //  SYSCTL_RCGCGPIO_R |= 0x32;  // real clock register 
 //  while((SYSCTL_PRGPIO_R&0x32)!=0x32){};
 // run next two lines on simulator to turn on F E B clocks
-// **************************************************
- 
+// ************************************************** 
   EnableInterrupts();
 	
-	//FMS ENGINE
-	
-	State_t* currentState; // need to initialize
-    
-	currentState = start;
+	// FMS ENGINE	
+	State_t* currentState = start;
 	
   while(1){
 		PE543210 = currentState -> outputTraffic;	
@@ -148,6 +144,4 @@ int main(void){
 		currentState = currentState -> next[input];
   }
 }
-
-
 
