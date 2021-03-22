@@ -2,9 +2,9 @@
 // This software configures DAC output
 // Lab 6 requires a minimum of 4 bits for the DAC, but you could have 5 or 6 bits
 // Runs on TM4C123
-// Program written by: put your names here
+// Program written by: Anuj Jain and George Koussa
 // Date Created: 3/6/17 
-// Last Modified: 1/17/21 
+// Last Modified: 3/22/21 
 // Lab number: 6
 // Hardware connections
 // TO STUDENTS "REMOVE THIS LINE AND SPECIFY YOUR HARDWARE********
@@ -19,7 +19,11 @@
 // Input: none
 // Output: none
 void DAC_Init(void){
-	// write this
+	SYSCTL_RCGCGPIO_R |= 0x02;
+	volatile int a = 4;
+	a++;
+	GPIO_PORTB_DIR_R |= 0x0F;
+	GPIO_PORTB_DEN_R |= 0x0F;
 }
 
 // **************DAC_Out*********************
@@ -30,5 +34,5 @@ void DAC_Init(void){
 // or Input=n is converted to n*3.3V/63
 // Output: none
 void DAC_Out(uint32_t data){
-	// write this
+	GPIO_PORTB_DATA_R = data;
 }
