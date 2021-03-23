@@ -115,7 +115,12 @@ int main(void){
   Sound_Init();
   // other initialization
   EnableInterrupts();
+	uint32_t heartbeat = 0;
   while(1){
+		heartbeat++;
+		if (heartbeat > 100000 && heartbeat < 200000) {
+			LaunchPad_Output(0x01);
+		}
 		uint32_t keys = Key_In();
 		if(keys == 0x01){
 			Sound_Start(A);
@@ -127,6 +132,10 @@ int main(void){
 			Sound_Start(D);
 		} else {
 			Sound_Off();
+		}
+		if (heartbeat > 200000) {
+			heartbeat = 0;
+			LaunchPad_Output(0x00);
 		}
   }          
 }

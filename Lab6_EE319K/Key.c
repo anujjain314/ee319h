@@ -22,7 +22,7 @@ void Key_Init(void){
   SYSCTL_RCGCGPIO_R |= 0x10;
 	volatile int a = 4;
 	a++;
-	GPIO_PORTE_DIR_R |= 0x0F;
+	GPIO_PORTE_DIR_R |= 0x00;
 	GPIO_PORTE_DEN_R |= 0x0F;
 	GPIO_PORTE_PDR_R |= 0x0F;
 }
