@@ -31,10 +31,6 @@ void Key_Init(void){
 // Output: 0 to 15 depending on keys
 //   0x01 is just Key0, 0x02 is just Key1, 0x04 is just Key2, 0x08 is just Key3
 uint32_t Key_In(void){ 
-	uint8_t keyData;
-	GPIO_PORTE_DATA_R &= 0x0F;
-	keyData = (GPIO_PORTE_DATA_R) & (0x0F);
-	
-	return keyData;
+	return (GPIO_PORTE_DATA_R & 0x0F);
 }
 
