@@ -115,8 +115,19 @@ int main(void){
   Sound_Init();
   // other initialization
   EnableInterrupts();
-	Sound_Start(C);
-  while(1){ 
+  while(1){
+		uint32_t keys = Key_In();
+		if(keys == 0x01){
+			Sound_Start(A);
+		} else if(keys == 0x02){
+			Sound_Start(B);
+		} else if(keys == 0x04){
+			Sound_Start(C);
+		} else if(keys == 0x08){
+			Sound_Start(D);
+		} else {
+			Sound_Off();
+		}
   }          
 }
 

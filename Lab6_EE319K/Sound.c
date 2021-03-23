@@ -44,8 +44,6 @@ void Sound_Init(void){
 // Output: none
 void Sound_Start(uint32_t period){
   // write this
-	NVIC_ST_CTRL_R = 0;
-	NVIC_ST_CURRENT_R = 0;
 	NVIC_ST_RELOAD_R = period;
 	NVIC_ST_CTRL_R = 0x00000007;
 }
@@ -63,6 +61,7 @@ void Sound_Voice(const uint8_t *voice){
 // stop outputing to DAC
 // Output: none
 void Sound_Off(void){
+	DAC_Out(0);
   NVIC_ST_CTRL_R = 0x00000005;
 }
 // **************Sound_GetVoice*********************
