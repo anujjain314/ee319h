@@ -24,6 +24,7 @@ void Key_Init(void){
 	a++;
 	GPIO_PORTE_DIR_R |= 0x0F;
 	GPIO_PORTE_DEN_R |= 0x0F;
+	GPIO_PORTE_PDR_R |= 0x0F;
 }
 // **************Key_In*********************
 // Input from piano key inputs on PA5-2 PB3-0 or PE3-0
