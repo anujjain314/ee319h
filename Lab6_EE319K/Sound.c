@@ -14,6 +14,12 @@
 #include "DAC.h"
 #include "../inc/tm4c123gh6pm.h"
 
+void Sound_Off(void);
+
+const unsigned short wave[32] = {
+  8,9,11,12,13,14,14,15,15,15,14,
+  14,13,12,11,9,8,7,5,4,3,2,
+  2,1,1,1,2,2,3,4,5,7};
 
 // **************Sound_Init*********************
 // Initialize digital outputs and SysTick timer
@@ -21,8 +27,9 @@
 // Input: none
 // Output: none
 void Sound_Init(void){
-  // write this
-  
+  DAC_Init();
+	Sound_Off();
+	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R&0x00FFFFFF)|0x20000000;
 }
 
 // **************Sound_Start*********************
@@ -37,7 +44,10 @@ void Sound_Init(void){
 // Output: none
 void Sound_Start(uint32_t period){
   // write this
-
+	NVIC_ST_CTRL_R = 0;
+	NVIC_ST_CURRENT_R = 0;
+	NVIC_ST_RELOAD_R = period;
+	NVIC_ST_CTRL_R = 0x00000007;
 }
 
 // **************Sound_Voice*********************
@@ -53,8 +63,7 @@ void Sound_Voice(const uint8_t *voice){
 // stop outputing to DAC
 // Output: none
 void Sound_Off(void){
-  // write this
-
+  NVIC_ST_CTRL_R = 0x00000005;
 }
 // **************Sound_GetVoice*********************
 // Read the current voice
@@ -71,8 +80,8 @@ const uint8_t *Sound_GetVoice(void){
 // Interrupt service routine
 // Executed every 12.5ns*(period)
 void SysTick_Handler(void){
-    // write this
-
+    static uint8_t index = 0;
+		uint8_t output = wave[index];
+		DAC_Out(output);
+		index = 0x1F&(index+1);
 }
-
-
