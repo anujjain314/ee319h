@@ -44,7 +44,7 @@ void Sound_Init(void){
 // Output: none
 void Sound_Start(uint32_t period){
   // write this
-	NVIC_ST_RELOAD_R = period;
+	NVIC_ST_RELOAD_R = period - 1;
 	NVIC_ST_CTRL_R = 0x00000007;
 }
 
