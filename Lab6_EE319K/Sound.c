@@ -1,12 +1,12 @@
 // Sound.c
 // This module contains the SysTick ISR that plays sound
 // Runs on TM4C123
-// Program written by: put your names here
+// Program written by: George Koussa & Anuj Jain
 // Date Created: 3/6/17 
-// Last Modified: 1/17/21 
+// Last Modified: 3/24/21
 // Lab number: 6
 // Hardware connections
-// TO STUDENTS "REMOVE THIS LINE AND SPECIFY YOUR HARDWARE********
+// PB0-PB4 : 4-bit DAC
 
 // Code files contain the actual implemenation for public functions
 // this file also contains an private functions and private data
@@ -16,6 +16,8 @@
 
 void Sound_Off(void);
 
+static uint8_t index = 0;		// current location within wave array
+static uint8_t volume = 15;	// max value of 15, the volume of the sound to be played
 const unsigned short wave[32] = {
   8,9,11,12,13,14,14,15,15,15,14,
   14,13,12,11,9,8,7,5,4,3,2,
@@ -29,7 +31,9 @@ const unsigned short wave[32] = {
 void Sound_Init(void){
   DAC_Init();
 	Sound_Off();
-	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R&0x00FFFFFF)|0x20000000;
+	index = 0;
+	volume = 15;
+	NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R&0x00FFFFFF)|0x40000000;	// set Systick priority to 2
 }
 
 // **************Sound_Start*********************
@@ -43,12 +47,11 @@ void Sound_Init(void){
 //         if period equals zero, disable sound output
 // Output: none
 void Sound_Start(uint32_t period){
-  // write this
 	if(period > 0){
-		NVIC_ST_RELOAD_R = period - 1;
-		NVIC_ST_CTRL_R = 0x00000007;
+		NVIC_ST_RELOAD_R = period - 1;	// set reload to period
+		NVIC_ST_CTRL_R = 0x00000007;		// enable systick and systick interupts
 	} else {
-		Sound_Off();
+		Sound_Off();										// turn sound off if period is zero
 	}
 }
 
@@ -65,8 +68,18 @@ void Sound_Voice(const uint8_t *voice){
 // stop outputing to DAC
 // Output: none
 void Sound_Off(void){
-	DAC_Out(0);
-  NVIC_ST_CTRL_R = 0x00000005;
+	index = 0;											// reset waveform index
+	DAC_Out(0);											// output a default value of 0 to the DAC
+  NVIC_ST_CTRL_R = 0x00000005;		// disable systick interrupts
+}
+
+
+// **************Sound_SetVolume*********************
+// Sets Volume to a new Value
+// Inputs: new value for volume
+// Output: none
+void Sound_SetVolume(uint8_t vol){
+	volume = vol;
 }
 // **************Sound_GetVoice*********************
 // Read the current voice
@@ -82,9 +95,10 @@ const uint8_t *Sound_GetVoice(void){
 
 // Interrupt service routine
 // Executed every 12.5ns*(period)
+// outputs values from the waveform to the DAC
 void SysTick_Handler(void){
-    static uint8_t index = 0;
-		uint8_t output = wave[index];
-		DAC_Out(output);
-		index = 0x1F&(index+1);
+		uint8_t output = wave[index];		//get output from wave array
+		output = (output*volume)/15;		//scale output depending on volume
+		DAC_Out(output);								//output to DAC
+		index = 0x1F&(index+1);					//go to next index (wraps around when reaches final index)
 }

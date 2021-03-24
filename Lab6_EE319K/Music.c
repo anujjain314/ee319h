@@ -4,67 +4,77 @@
 //
 // For use with the TM4C123
 // EE319K lab6 extra credit
-// Program written by: put your names here
-// 1/17/21
+// Program written by: George Koussa & Anuj Jain
+// 3/24/21
 
 #include "Sound.h"
 #include "DAC.h"
+#include "Music.h" 
 #include <stdint.h>
 #include "../inc/tm4c123gh6pm.h"
 
-#define C0  4778   // 523.3 Hz
-#define D   4257   // 587.3 Hz
-#define E   3792   // 659.3 Hz
-#define F   3579   // 698.5 Hz
-#define G    3189   // 784 Hz
+#define msToClockCycle(t) (t*80000) 
+
+void Timer_Init(void);
+void Timer_Stop(void);
+void Timer0A_Handler(void);
 
 
-struct note {
-	uint32_t pitch;
-	uint32_t volume;
-	uint32_t time;
-};
+static uint16_t length = 0;	// length of currentSong (0 means there are no notes left to play)
+static Note* currentSong;		// pointer to the array of notes that is currently being processed (or has just been processed)
+uint8_t playingMusic = 0;		// 0 is music is not playing, 1 if music is playing
 
-struct note E_q = {E, , 500};
-struct note F_q = {F, , 500};
-struct note G_q = {G, , 500};
-struct note D_q = {D, , 500};
-struct note C_q = {C0, , 500};
-
-struct note E_dq = {E, ,750};
-struct note D_e = {D, , 250};
-struct note D_h = {D, , 1000};
-	
-
+// initialized the interrupt timer and the sound module, run once
 void Music_Init(void){
-  // write this
-  // extra credit
-
+	Sound_Init();
+	Timer_Init();
+	length = 0;
 }
 
+// plays the next note in the currentSong and updates the length
+void playNextNote(){
+		Sound_SetVolume(currentSong->volume);	// set volume
+		Sound_Start(currentSong->pitch);			// set pitch
+		currentSong = currentSong + 1;				// go to the next note
+		length--;															// update length
+}
 
-// Play song, while button pushed or until end
-void Music_PlaySong(void){
-  // write this
-  // extra credit
-
+// Play song, passed as a pointer to an array of notes along with its length
+void Music_PlaySong(Note* song, uint16_t len){
+	if(len > 0){
+		playingMusic = 1;											// music is starting to be played
+		length = len;
+		currentSong = song;
+		Timer0A_Handler();										// play first note
+		TIMER0_CTL_R = 0x00000001; 						// enable timer0A
+	} else {
+		Music_StopSong();											// dont play anything if there are no notes to play
+	}
 }
 
 // Stop song
 void Music_StopSong(void){
-   // write this
-  // extra credit
-
+	Timer_Stop();														// stop the timer
+	length = 0;		
+	Sound_SetVolume(15);										// set volume to default value
+	Sound_Off();														// turn off sound
+	playingMusic = 0;												// music is not longer being played
 }
 
-// Timer0A actually controls outputting to DAC
+// Timer0A acts as a metronome for the song(s)
 void Timer0A_Handler(void){
-    // write this
-  // extra credit
-
+	TIMER0_ICR_R = 0x00000001;  // acknowledge
+	if(length > 0){							// more notes to play
+		TIMER0_TAILR_R = msToClockCycle(currentSong->time) - 1;		// set timer to the time that the note should be played for
+		playNextNote();																						// play the note
+	} else {
+		Music_StopSong();																					// no more notes to play
+	}
 }
 
-  // Timer1A acts as a metronome for the song(s)
+
+// NOT USED
+// Timer1A actually controls outputting to DAC
 void Timer1A_Handler(void){
     // write this
   // extra credit
@@ -75,18 +85,23 @@ void Timer1A_Handler(void){
 #define NVIC_EN0_INT21          0x00200000  // Interrupt 21 enable
 
 // ***************** Timer_Init ****************
-// Activate Timer0A and Timer1A interrupts to run user task periodically
-// Inputs: period0 in nsec
-//         period1 in msec
+// Initilize Timer0A interrupt to run user task periodically, does not enable the timer
 // Outputs: none
-void Timer_Init(unsigned int period0, unsigned int period1){ uint32_t volatile delay;
-   // write this
-  // extra credit
-
+void Timer_Init(void){ uint32_t volatile delay;
+  SYSCTL_RCGCTIMER_R |= 0x01;                        // activate timer0
+  delay = SYSCTL_RCGCTIMER_R;
+  TIMER0_CTL_R = 0x00000000;                         // disable timer0A
+  TIMER0_CFG_R = 0x00000000;                         // 32-bit mode
+  TIMER0_TAMR_R = 0x00000002;                        // periodic mode
+  TIMER0_TAPR_R = 0;                                 // 12.5 ns
+  TIMER0_ICR_R = 0x00000001;   											 // clear timeout flag
+  TIMER0_IMR_R = 0x00000001;   											 // arm timeout
+  NVIC_PRI5_R = (NVIC_PRI4_R&0x00FFFFFF)|0x20000000; // priority 4
+  NVIC_EN0_R = NVIC_EN0_INT19;          						 // enable IRQ 19
 }
-void Timer_Stop(void){ 
-    // write this
-  // extra credit
 
+// disables the timer
+void Timer_Stop(void){ 
+  TIMER0_CTL_R = 0x00000000;                         // disable timer0A
 }
 
