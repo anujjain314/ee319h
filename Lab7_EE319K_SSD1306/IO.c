@@ -30,10 +30,8 @@ void IO_Init(void) { volatile uint32_t delay;
 	delay = SYSCTL_RCGCGPIO_R;		
 	GPIO_PORTF_DIR_R |= 0x04;			// make PF2 output
 	GPIO_PORTF_DIR_R &= ~0x10;		// make PF4 input
-	GPIO_PORTF_PDR_R |= 0x10;			// PDR on PF4
+	GPIO_PORTF_PUR_R |= 0x10;			// PDR on PF4
 	GPIO_PORTF_DEN_R |= 0x14;     // enable PF4 and PF2
-	PF2 = 0;											// turn off LED
-	
 }
 
 //------------IO_HeartBeat------------
@@ -53,9 +51,9 @@ void IO_HeartBeat(void) {
 // 3) wait for press; and then 
 // 4) delay for another 5ms
 void IO_Touch(void) {
-	while(PF4 >> 4){}
-	Clock_Delay1ms(5);
 	while(!(PF4 >> 4)){}
+	Clock_Delay1ms(5);
+	while((PF4 >> 4)){}
 	Clock_Delay1ms(5);
 }  
 
