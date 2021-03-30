@@ -26,9 +26,9 @@ I2C_Send2
 ; 1) wait while I2C is busy, wait for I2C3_MCS_R bit 0 to be 0
 	LDR R3, =I2C3_MCS_R
 	LDRB R3, [R3]
-	AND R3, #0xFE
+	AND R3, #0x01
 	CMP R3, #0
-	BEQ I2C_Send2
+	BNE I2C_Send2
 	
 ; 2) write slave address to I2C3_MSA_R, 
 ;     MSA bits7-1 is slave address
@@ -53,12 +53,13 @@ I2C_Send2
 	NOP
 	NOP
 
+wait
 ; 5) wait while I2C is busy, wait for I2C3_MCS_R bit 0 to be 0
 	LDR R3, =I2C3_MCS_R
 	LDRB R1, [R3]
-	AND R3, #0xFE
+	AND R3, #0x01
 	CMP R3, #0
-	BEQ I2C_Send2
+	BNE wait
 	
 ; 6) check for errors, if any bits 3,2,1 I2C3_MCS_R is high 
 ;    a) if error set I2C3_MCS_R to 0x04 to send stop 
@@ -92,11 +93,12 @@ continue
 	NOP
 ; add 4 NOPs to wait for I2C to start transmitting
 ; 9) wait while I2C is busy, wait for I2C3_MCS_R bit 0 to be 0
+wait2
 	LDR R3, =I2C3_MCS_R
 	LDRB R1, [R3]
-	AND R3, #0xFE
+	AND R3, #0x01
 	CMP R3, #0
-	BEQ I2C_Send2
+	BNE wait2
 	
 ; 10) return R0 equal to bits 3,2,1 of I2C3_MCS_R, error bits
 ;     will be 0 is no error
