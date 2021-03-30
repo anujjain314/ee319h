@@ -57,8 +57,8 @@ wait
 ; 5) wait while I2C is busy, wait for I2C3_MCS_R bit 0 to be 0
 	LDR R3, =I2C3_MCS_R
 	LDRB R1, [R3]
-	AND R3, #0x01
-	CMP R3, #0
+	AND R1, #0x01
+	CMP R1, #0
 	BNE wait
 	
 ; 6) check for errors, if any bits 3,2,1 I2C3_MCS_R is high 
@@ -96,8 +96,8 @@ continue
 wait2
 	LDR R3, =I2C3_MCS_R
 	LDRB R1, [R3]
-	AND R3, #0x01
-	CMP R3, #0
+	AND R1, #0x01
+	CMP R1, #0
 	BNE wait2
 	
 ; 10) return R0 equal to bits 3,2,1 of I2C3_MCS_R, error bits
