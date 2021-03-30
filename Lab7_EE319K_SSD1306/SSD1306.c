@@ -1387,6 +1387,7 @@ void SSD1306_OutChar(char data){//int i;
 void SSD1306_OutString(char *ptr){
 		while(ptr[0] != '\0'){
 			SSD1306_OutChar(*ptr);
+			ptr++;
 		}
 }
 
