@@ -1385,10 +1385,9 @@ void SSD1306_OutChar(char data){//int i;
 // Outputs: none
 // Assumes: OLED is in horizontal addressing mode 
 void SSD1306_OutString(char *ptr){
-// you write this as part of Lab 7
-
-// ******solution*********
- 
+		while(ptr[0] != '\0'){
+			SSD1306_OutChar(*ptr);
+		}
 }
 
 //********SSD1306_OutUDec*****************
