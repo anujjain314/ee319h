@@ -19,7 +19,7 @@
 		
 	MACRO
 	MOD $Rd, $Rn1, $Rn2
-	SDIV $Rd, $Rn1, $Rn2
+	UDIV $Rd, $Rn1, $Rn2
 	MUL $Rd, $Rd, $Rn2
 	SUB $Rd, $Rn1, $Rd
 	MEND
@@ -42,7 +42,7 @@ LCD_OutDec
 	 MOD R1, R0, R2
 	 STR R1, [SP, #digit]
 	 
-	 SDIV R0, R2
+	 UDIV R0, R2
 	 BL LCD_OutDec
 	 
 	 LDR R0, [SP, #digit]
@@ -68,6 +68,53 @@ OutDec_Done
 ;       R0>999,  then output "*.** "
 ; Invariables: This function must not permanently modify registers R4 to R11
 LCD_OutFix
+
+	PUSH { LR }
+	SUB SP, SP, #16
+
+	LDR R1, =1000
+	CMP R0, R1
+	BHS outStars
+	
+	MOV R1, #10
+	MOD R2 ,R0, R1
+	STR R2, [R11, #0]
+	
+	UDIV R0, R0, R1
+	MOD R2, R0, R1
+	STR R2, [R11, #8]
+	
+	MOV R1, #100
+	UDIV R0, R0, R1
+	STR R0, [R11, #4]
+	
+	LDR R0, [R11, #8]
+	BL LCD_OutDec
+	
+	MOV R0, #'.'
+	BL SSD1306_OutChar
+	
+	LDR R0, [R11, #4]
+	BL LCD_OutDec
+	
+	LDR R0, [R11, #0]
+	BL LCD_OutDec
+	
+	B doneOutFix
+	
+outStars
+	MOV R0, #0x2A
+	BL SSD1306_OutChar
+	MOV R0, #0x2E
+	BL SSD1306_OutChar
+	MOV R0, #0x2A
+	BL SSD1306_OutChar
+	MOV R0, #0x2A
+	BL SSD1306_OutChar
+	
+doneOutFix
+	POP { LR }
+	ADD SP, SP, #16
 
      BX   LR
  
