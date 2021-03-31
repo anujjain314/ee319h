@@ -24,34 +24,33 @@
 	SUB $Rd, $Rn1, $Rd
 	MEND
 
-
 ;-----------------------LCD_OutDec-----------------------
 ; Output a 32-bit number in unsigned decimal format
 ; Input: R0 (call by value) 32-bit unsigned number
 ; Output: none
 ; Invariables: This function must not permanently modify registers R4 to R11
-digit EQU 0
+digit EQU 0						; binding
 LCD_OutDec
      PUSH {R0, LR}
-	 SUB   SP, SP, #4
-	  
-	 CMP R0, #0
-	 BEQ  OutDec_Done
+	 SUB SP, SP, #4			    ; allocation
 	 
-	 MOV R2, #10
-	 MOD R1, R0, R2
-	 STR R1, [SP, #digit]
+	 MOV R2, #10				; recursive case 
+	 MOD R1, R0, R2				; digit = R0 % 10
+	 STRB R1, [SP, #digit] 
+	 UDIV R0, R2				; input = input / 10
 	 
-	 UDIV R0, R2
-	 BL LCD_OutDec
+	 CMP R0, #0					; base case - input is zero
+	 BEQ OutDec_Done
 	 
-	 LDR R0, [SP, #digit]
+	 BL LCD_OutDec				; call OutDec with new input
+	 
+OutDec_Done	 
+	 LDRB R0, [SP, #digit]		; after reaching base case, convert digits to ascii characters and print
 	 ADD R0, #0x30
 	 BL SSD1306_OutChar
  
-OutDec_Done
-	 ADD SP, SP, #4;	  
-     POP{R0, LR}
+	 ADD SP, SP, #4;	  		; deallocation
+     POP {R0, LR}
 	 BX LR
 ;* * * * * * * * End of LCD_OutDec * * * * * * * *
 
