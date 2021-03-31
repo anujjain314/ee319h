@@ -16,6 +16,13 @@
     PRESERVE8
     AREA    |.text|, CODE, READONLY, ALIGN=2
     THUMB
+		
+	MACRO
+	MOD $Rd, $Rn1, $Rn2
+	SDIV $Rd, $Rn1, $Rn2
+	MUL $Rd, $Rd, $Rn2
+	SUB $Rd, $Rn1, $Rd
+	MEND
 
 
 ;-----------------------LCD_OutDec-----------------------
@@ -23,10 +30,29 @@
 ; Input: R0 (call by value) 32-bit unsigned number
 ; Output: none
 ; Invariables: This function must not permanently modify registers R4 to R11
+digit EQU 0
 LCD_OutDec
-
-
-      BX  LR
+     PUSH {R0, LR}
+	 SUB   SP, SP, #4
+	  
+	 CMP R0, #0
+	 BEQ  OutDec_Done
+	 
+	 MOV R2, #10
+	 MOD R1, R0, R2
+	 STR R1, [SP, #digit]
+	 
+	 SDIV R0, R2
+	 BL LCD_OutDec
+	 
+	 LDR R0, [SP, #digit]
+	 ADD R0, #0x30
+	 BL SSD1306_OutChar
+ 
+OutDec_Done
+	 ADD SP, SP, #4;	  
+     POP{R0, LR}
+	 BX LR
 ;* * * * * * * * End of LCD_OutDec * * * * * * * *
 
 ; -----------------------LCD _OutFix----------------------
