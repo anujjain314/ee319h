@@ -53,10 +53,17 @@ int main(void){
   SSD1306_Init(SSD1306_SWITCHCAPVCC);
   while(1){  
     SSD1306_OutClear();       // set screen to black
+		SSD1306_DrawBMP(10,15,plus5,14,SSD1306_WHITE);	// 3 custom bitmaps
+		SSD1306_DrawBMP(50,15,plus5,14,SSD1306_WHITE);
+		SSD1306_DrawBMP(90,15,plus5,14,SSD1306_WHITE);
     SSD1306_DrawBMP(0,60,logo,14,SSD1306_WHITE);
     SSD1306_OutBuffer();
     IO_Touch();	
     SSD1306_OutClear();       // set screen to black
+		SSD1306_DrawBMP(10,60,test,14,SSD1306_WHITE);	  // 3 test images
+		SSD1306_DrawBMP(50,60,test,14,SSD1306_WHITE);
+		SSD1306_DrawBMP(90,60,test,14,SSD1306_WHITE);
+		SSD1306_OutBuffer();
     SSD1306_OutString("Lab 7 Spring 2021\nWelcome to EE319K\n\nHit SW1 to advance");
     IO_Touch();
 

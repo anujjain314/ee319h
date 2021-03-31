@@ -29,7 +29,7 @@
 ; Input: R0 (call by value) 32-bit unsigned number
 ; Output: none
 ; Invariables: This function must not permanently modify registers R4 to R11
-digit EQU 0						; binding
+digit EQU 0						; binding, digit = rightmost digit of input
 LCD_OutDec
      PUSH {R0, LR}
 	 SUB SP, SP, #4			    ; allocation
@@ -66,46 +66,46 @@ OutDec_Done
 ;       R0=999,  then output "9.99 "
 ;       R0>999,  then output "*.** "
 ; Invariables: This function must not permanently modify registers R4 to R11
-LCD_OutFix
-
-dec0 EQU 0
+dec0 EQU 0					; binding
 int  EQU 4
 dec1 EQU 8
+LCD_OutFix
+	PUSH {R11, LR}
+	SUB SP, SP, #12			; allocation
 
-	PUSH { R11, LR}
-	SUB SP, SP, #12
-
-	LDR R1, =1000
+	LDR R1, =1000			; output *.** if R0 > 999
 	CMP R0, R1
 	BHS outStars
 	
-	MOV R1, #10
+	MOV R1, #10				; dec0 = input%10, ones digit
 	MOD R2 ,R0, R1
-	STR R2, [SP, #0]
-	
+	STR R2, [SP, #dec0]
 	UDIV R0, R0, R1
-	MOD R2, R0, R1
-	STR R2, [SP, #8]
 	
-	MOV R1, #10
+	MOD R2, R0, R1		    ; dec1 = (input/10)%10, tens digit
+	STR R2, [SP, #dec1]	
 	UDIV R2, R0, R1
-	STR R2, [SP, #4]
 	
-	LDR R0, [SP, #4]
-	BL LCD_OutDec
+	STR R2, [SP, #int]		; int = inpt/100, hundreds digit
 	
-	MOV R0, #0x2E
+	LDR R0, [SP, #int]	    ; print int, hundreds digit
+	ADD R0, #0x30
 	BL SSD1306_OutChar
 	
-	LDR R0, [SP, #8]
-	BL LCD_OutDec
+	MOV R0, #0x2E			; print "."
+	BL SSD1306_OutChar
 	
-	LDR R0, [SP, #0]
-	BL LCD_OutDec
+	LDR R0, [SP, #dec1]	    ; print dec1, tens digit
+	ADD R0, #0x30
+	BL SSD1306_OutChar
+	
+	LDR R0, [SP, #dec0]		; print dec2, ones digit
+	ADD R0, #0x30
+	BL SSD1306_OutChar
 	
 	B doneOutFix
 	
-outStars
+outStars				   ; output *.**
 	MOV R0, #0x2A
 	BL SSD1306_OutChar
 	MOV R0, #0x2E
@@ -116,10 +116,10 @@ outStars
 	BL SSD1306_OutChar
 	
 doneOutFix
-	ADD SP, SP, #12
-	POP { R11, LR }
+	ADD SP, SP, #12		   ; deallocation
+	POP {R11, LR}
 	
-     BX   LR
+    BX   LR
  
      ALIGN
 ;* * * * * * * * End of LCD_OutFix * * * * * * * *

@@ -36,7 +36,6 @@ I2C_Send2
 	LSL R0, #1
 	LDR R3, =I2C3_MSA_R
 	STRB R0, [R3]
-	AND R3, #0xFE
 	
 ; 3) write first data to I2C3_MDR_R
 	LDR R3, =I2C3_MDR_R
@@ -86,12 +85,13 @@ continue
 	MOV R1, #0x05
 	LDR R3, =I2C3_MCS_R
 	STR R1, [R3]
-	
-	NOP
-	NOP
-	NOP
-	NOP
+
 ; add 4 NOPs to wait for I2C to start transmitting
+	NOP
+	NOP
+	NOP
+	NOP
+
 ; 9) wait while I2C is busy, wait for I2C3_MCS_R bit 0 to be 0
 wait2
 	LDR R3, =I2C3_MCS_R
