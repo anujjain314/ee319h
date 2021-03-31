@@ -68,8 +68,12 @@ OutDec_Done
 ; Invariables: This function must not permanently modify registers R4 to R11
 LCD_OutFix
 
+dec0 EQU 0
+int  EQU 4
+dec1 EQU 8
+
 	PUSH { R11, LR}
-	SUB SP, SP, #16
+	SUB SP, SP, #12
 
 	LDR R1, =1000
 	CMP R0, R1
@@ -90,7 +94,7 @@ LCD_OutFix
 	LDR R0, [SP, #4]
 	BL LCD_OutDec
 	
-	MOV R0, #'.'
+	MOV R0, #0x2E
 	BL SSD1306_OutChar
 	
 	LDR R0, [SP, #8]
@@ -112,7 +116,7 @@ outStars
 	BL SSD1306_OutChar
 	
 doneOutFix
-	ADD SP, SP, #16
+	ADD SP, SP, #12
 	POP { R11, LR }
 	
      BX   LR
