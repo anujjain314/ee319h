@@ -64,6 +64,7 @@ wait
 ;    a) if error set I2C3_MCS_R to 0x04 to send stop 
 ;    b) if error return R0 equal to bits 3,2,1 of I2C3_MCS_R, error bits
 
+	LDRB R1, [R3]
 	LSR R1, #1
 	AND R1, #07
 	CMP R1, #0
@@ -102,6 +103,7 @@ wait2
 	
 ; 10) return R0 equal to bits 3,2,1 of I2C3_MCS_R, error bits
 ;     will be 0 is no error
+	LDRB R1, [R3]
     LSR R1, #1
 	AND R1, #07
 	CMP R1, #0
