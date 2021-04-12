@@ -34,6 +34,8 @@ SlidePot::SlidePot(uint32_t m, uint32_t b){
 //*** students write this ******
 // initialize all private variables
 // make slope equal to m and offset equal to b
+	slope = m;
+	offset = b;
 }
 
 void SlidePot::Save(uint32_t n){
@@ -57,20 +59,20 @@ uint32_t SlidePot::Convert(uint32_t n){
 
 void SlidePot::Sync(void){
 //*** students write this ******
-// 1) wait for semaphore flag to be nonzero
-// 2) set semaphore flag to 0
+		while(!flag){}			// 1) wait for semaphore flag to be nonzero
+		flag = 0;						// 2) set semaphore flag to 0
 }
 
 uint32_t SlidePot::ADCsample(void){ // return ADC sample value (0 to 4095)
   //*** students write this ******
   // return last calculated ADC sample
-  return 0; // replace this with solution
+  return data;
 }
 
 uint32_t SlidePot::Distance(void){  // return distance value (0 to 200), 0.01cm
   //*** students write this ******
-  // return last calculated distance in 0.001cm
-  return 0; // replace this with solution
+  // return last calculated distance in 0.01cm
+  return distance;
 }
 
 
