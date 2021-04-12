@@ -43,6 +43,9 @@ void SlidePot::Save(uint32_t n){
 // 1) save ADC sample into private variable
 // 2) calculate distance from ADC, save into private variable
 // 3) set semaphore flag = 1
+	data = n;
+	distance = Convert(data);
+	flag = 1;
 }
 //**********place your calibration data here*************
 // distance PD2       ADC  fixed point
@@ -54,7 +57,7 @@ void SlidePot::Save(uint32_t n){
 uint32_t SlidePot::Convert(uint32_t n){
   //*** students write this ******
   // use calibration data to convert ADC sample to distance
-  return 0; // replace this with solution
+  return (slope * data + offset)/4096;
 }
 
 void SlidePot::Sync(void){
