@@ -16,13 +16,14 @@
 // measures from PD2, analog channel 5
 void ADC_Init(uint32_t sac){ 
   SYSCTL_RCGCADC_R |= 0x0001;   // 1) activate ADC0
-  SYSCTL_RCGCGPIO_R |= 0x08;    // 2) activate clock for Port E
-  while((SYSCTL_PRGPIO_R&0x10) != 0x10){};  // 3 for stabilization
-  GPIO_PORTE_DIR_R &= ~0x08;    // 4) make PE4 input
-  GPIO_PORTE_AFSEL_R |= 0x08;   // 5) enable alternate function on PE4
-  GPIO_PORTE_DEN_R &= ~0x08;    // 6) disable digital I/O on PE4
-  GPIO_PORTE_AMSEL_R |= 0x08;   // 7) enable analog functionality on PE4
-// while((SYSCTL_PRADC_R&0x0001) != 0x0001){}; // good code, but not implemented in simulator
+  SYSCTL_RCGCGPIO_R |= 0x08;    // 2) activate clock for Port D
+	__nop();
+	__nop();
+//  while((SYSCTL_PRGPIO_R&0x10) == 0);  // 3 for stabilization
+  GPIO_PORTD_DIR_R &= ~0x04;    // 4) make PD2 input
+  GPIO_PORTD_AFSEL_R |= 0x04;   // 5) enable alternate function on PD2
+  GPIO_PORTD_DEN_R &= ~0x04;    // 6) disable digital I/O on PD2
+  GPIO_PORTD_AMSEL_R |= 0x04;   // 7) enable analog functionality on PD2
   ADC0_PC_R &= ~0xF;
   ADC0_PC_R |= 0x1;             // 8) configure for 125K samples/sec
   ADC0_SSPRI_R = 0x0123;        // 9) Sequencer 3 is highest priority
