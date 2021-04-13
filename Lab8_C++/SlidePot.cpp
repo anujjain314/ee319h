@@ -24,13 +24,13 @@ void ADC_Init(uint32_t sac){
   GPIO_PORTD_AFSEL_R |= 0x04;   // 5) enable alternate function on PD2
   GPIO_PORTD_DEN_R &= ~0x04;    // 6) disable digital I/O on PD2
   GPIO_PORTD_AMSEL_R |= 0x04;   // 7) enable analog functionality on PD2
-  ADC0_PC_R &= ~0xF;
+//  ADC0_PC_R &= ~0xF;
   ADC0_PC_R |= 0x1;             // 8) configure for 125K samples/sec
   ADC0_SSPRI_R = 0x0123;        // 9) Sequencer 3 is highest priority
   ADC0_ACTSS_R &= ~0x0008;      // 10) disable sample sequencer 3
   ADC0_EMUX_R &= ~0xF000;       // 11) seq3 is software trigger
   ADC0_SSMUX3_R &= ~0x000F;
-  ADC0_SSMUX3_R += 9;           // 12) set channel
+  ADC0_SSMUX3_R += 5;           // 12) set channel
   ADC0_SSCTL3_R = 0x0006;       // 13) no TS0 D0, yes IE0 END0
   ADC0_IM_R &= ~0x0008;         // 14) disable SS3 interrupts
   ADC0_ACTSS_R |= 0x0008;       // 15) enable sample sequencer 3
@@ -80,12 +80,12 @@ void SlidePot::Save(uint32_t n){
 uint32_t SlidePot::Convert(uint32_t n){
   //*** students write this ******
   // use calibration data to convert ADC sample to distance
-  return (slope * data + offset)/4096;
+  return (185 * n ) / (4096 + 66);
 }
 
 void SlidePot::Sync(void){
 //*** students write this ******
-		while(!flag){}			// 1) wait for semaphore flag to be nonzero
+		while(!flag);			// 1) wait for semaphore flag to be nonzero
 		flag = 0;						// 2) set semaphore flag to 0
 }
 

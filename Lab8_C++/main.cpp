@@ -23,7 +23,7 @@
 #include "SlidePot.h"
 #include "print.h"
 
-SlidePot my(150,0);
+SlidePot my(185,66);
 
 extern "C" void DisableInterrupts(void);
 extern "C" void EnableInterrupts(void);
@@ -42,12 +42,17 @@ extern "C" void SysTick_Handler(void);
 //        Minimum is determined by length of ISR
 // Output: none
 void SysTick_Init(unsigned long period){
-  //*** students write this ******
+  NVIC_ST_CTRL_R = 0;
+	NVIC_ST_RELOAD_R = period - 1;
+	NVIC_ST_CURRENT_R = 0;
+	NVIC_ST_CTRL_R = 0x0000007;
 }
 
 // Initialize Port F so PF1, PF2 and PF3 are heartbeats
 void PortF_Init(void){
- //*** students write this ******
+	SYSCTL_RCGCGPIO_R |= 0x20;
+	GPIO_PORTF_DIR_R |= 0x0E;
+	GPIO_PORTF_DEN_R |= 0x0E;
 }
 uint32_t Data;      // 12-bit ADC
 uint32_t Position;  // 32-bit fixed-point 0.01 cm
@@ -134,7 +139,8 @@ uint32_t MailValue;
 #define MS 80000
 void SysTick_Handler(void){ // every 100 ms
   PF1 ^= 0x02;     // Heartbeat
-  //*** students write this ******
+  uint32_t data = ADC_In();
+  my.Save(data);
 // should call ADC_In() and Sensor.Save
 }
 // final main program to create distance meter
@@ -144,13 +150,18 @@ int main(void){
   TExaS_Init();    // bus clock at 80 MHz
   SSD1306_Init(SSD1306_SWITCHCAPVCC);
   ADC_Init(SAC_32);  // turn on ADC, set channel to 5
+	SysTick_Init(8000000);
  // 32-point averaging  
   PortF_Init();
   // more initializations
   EnableInterrupts();
   while(1){
     // call your Sensor.Sync(); // wait for semaphore
-    // can call Sensor.ADCsample, Sensor.Distance, Sensor.Convert as needed    
+    // can call Sensor.ADCsample, Sensor.Distance, Sensor.Convert as needed 
+		my.Sync();
+		SSD1306_SetCursor(0,0);
+		LCD_OutFix(my.Distance());
+		SSD1306_OutString((char*)" cm");
   }
 }
 
