@@ -36,30 +36,39 @@ Queue::Queue(){
   // We are assuming that for an empty Queue, both PutI and GetI will be equal
   
   // write this
+	PutI = 0;
+	GetI = 0;
 }
 
 // To check whether Queue is empty or not
 bool Queue::IsEmpty(void){
    // write this
-  return false;
+	if (PutI == GetI) return true;
+	else return false;
 }
 
   // To check whether Queue is full or not
 bool Queue::IsFull(void){
    // write this
-  return false;
+	if ((PutI + 1) % 10 == GetI) return true;
+  else return false;
 }
 
   // Inserts an element in queue at rear end
 bool Queue::Put(char x){
    // write this
+	if (Queue::IsFull()) return false;
+	Buf[PutI] = x;
   return false;
 }
 
   // Removes an element in Queue from front end. 
 bool Queue::Get(char *pt){
    // write this
-  return false;
+	if (Queue::IsEmpty()) return false;
+	Buf[GetI] = *pt;
+	GetI = (GetI + 1) % 10;
+  return true;
 }
 
   /* 
@@ -68,8 +77,9 @@ bool Queue::Get(char *pt){
      This is not a standard function for Queue implementation. 
   */
 void Queue::Print(void){
- 
-  
+	for (int i = 0; i <= GetI; i++) {
+		SSD1306_OutChar(Buf[i]);
+	}
 }
 
 
