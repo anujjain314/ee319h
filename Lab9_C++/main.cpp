@@ -43,6 +43,7 @@ extern "C" void SysTick_Handler(void);
 extern "C" void LogicAnalyzerTask(void);
 #define PC54                  (*((volatile uint32_t *)0x400060C0)) // bits 5-4
 #define PF321                 (*((volatile uint32_t *)0x40025038)) // bits 3-1
+#define MS 80000
 // TExaSdisplay logic analyzer shows 7 bits 0,PC5,PC4,PF3,PF2,PF1,0 
 void LogicAnalyzerTask(void){
   UART0_DR_R = 0x80|PF321|PC54; // sends at 10kHz
@@ -84,7 +85,7 @@ void PortF_Init(void){
 // FIFO.h is prototype
 // FIFO.cpp is implementation
 Queue FIFO;
-int main(void){
+int main1(void){
   char data = 0; char out;
   DisableInterrupts();
   TExaS_Init(&LogicAnalyzerTask);
@@ -155,7 +156,7 @@ int main2(void){
 // final main program for bidirectional communication
 // Sender sends using SysTick Interrupt
 // Receiver receives using RX
-int main0(void){  // valvano version
+int main(void){  // valvano version
   DisableInterrupts();
   TExaS_Init(&LogicAnalyzerTask);
   SSD1306_Init(SSD1306_SWITCHCAPVCC);
@@ -165,6 +166,7 @@ int main0(void){  // valvano version
   UART1_Init();    // initialize UART
   // other initializations
 //Enable SysTick Interrupt by calling SysTick_Init()
+	SysTick_Init(100*MS);
   EnableInterrupts();
 
   while(1){ 
@@ -182,17 +184,17 @@ void SysTick_Handler(void){
 	TxCounter++;
 	
 	PF2 ^= 0x04;		 //Heartbeat
-	char message[8] = {0x02, 0, 0x2E, 0, 0, 0x20, 0x0D, 0x02}; //Message template
+	char message[8] = {0x02, 0, 0x2E, 0, 0, 0x20, 0x0D, 0x03}; //Message template
 	
 	uint32_t newData = ADC_In();		// get new data and store into slidepot, calculate distance
 	my.Save(newData);
 	uint32_t temp = my.Distance();
 	
-	message[1] = temp/100;					// convert to ASCII, create message
+	message[1] = temp/100 + 0x30;					// convert to ASCII, create message
+	temp %= 100;
+	message[3] = temp/10 + 0x30;
 	temp %= 10;
-	message[3] = temp/10;
-	temp %= 10;
-	message[4] = temp;
+	message[4] = temp + 0x30;
 	
 	for(uint8_t i = 0; i < 8; i++){ // send message
 		UART1_OutChar(message[i]);
