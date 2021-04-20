@@ -84,7 +84,7 @@ void PortF_Init(void){
 // FIFO.h is prototype
 // FIFO.cpp is implementation
 Queue FIFO;
-int main1(void){
+int main(void){
   char data = 0; char out;
   DisableInterrupts();
   TExaS_Init(&LogicAnalyzerTask);
@@ -155,7 +155,7 @@ int main2(void){
 // final main program for bidirectional communication
 // Sender sends using SysTick Interrupt
 // Receiver receives using RX
-int main(void){  // valvano version
+int main0(void){  // valvano version
   DisableInterrupts();
   TExaS_Init(&LogicAnalyzerTask);
   SSD1306_Init(SSD1306_SWITCHCAPVCC);
@@ -177,10 +177,25 @@ int main(void){  // valvano version
 
 
 
-void SysTick_Handler(void){ 
-
-  
-    // write this
-
+void SysTick_Handler(void){
+	static uint32_t TxCounter = 0; // interrupt counter
+	TxCounter++;
+	
+	PF2 ^= 0x04;		 //Heartbeat
+	char message[8] = {0x02, 0, 0x2E, 0, 0, 0x20, 0x0D, 0x02}; //Message template
+	
+	uint32_t newData = ADC_In();		// get new data and store into slidepot, calculate distance
+	my.Save(newData);
+	uint32_t temp = my.Distance();
+	
+	message[1] = temp/100;					// convert to ASCII, create message
+	temp %= 10;
+	message[3] = temp/10;
+	temp %= 10;
+	message[4] = temp;
+	
+	for(uint8_t i = 0; i < 8; i++){ // send message
+		UART1_OutChar(message[i]);
+	}
 }
 
