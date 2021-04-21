@@ -72,7 +72,8 @@ char UART1_InChar(void){
 // check software RxFifo
 bool UART1_InStatus(void){
   // write this
- return false; // remove this line
+	if (RxFifo.IsEmpty()) return false;
+	return true;
 }
 
 // output ASCII character to UART
@@ -84,15 +85,24 @@ void UART1_OutChar(char data){
   while((UART1_FR_R&0x0020) != 0);      // wait until TXFF is 0
   UART1_DR_R = data;
 }
+
 // one of two things has happened:
 // 1) hardware RX FIFO goes from 7 to 8 or more items
 // 2) receiver timeout (data in hardware Rx but no activity)
 // Lab 9
+uint32_t errorCount = 0;
 void UART1_Handler(void){
+	static uint32_t RxCounter = 0;
   PF1  ^= 0x02; // single toggle debugging
     // write this
-
-
+	if (RxFifo.IsFull()) errorCount++;
+	while ((UART1_FR_R&0x0010) == 0) {
+		char data = UART1_InChar();
+		RxFifo.Put(data);
+		errorCount++;
+	}
+	RxCounter++;
+	UART1_ICR_R = 0x10; // this clears bit 4 (RXRIS) in the RIS register
 }
 
 //------------UART1_InMessage------------
@@ -103,7 +113,13 @@ void UART1_Handler(void){
 // Output: Null terminated string
 // removes STX CR ETX
 void UART1_InMessage(char *bufPt){
-  // write this
-
-
+uint8_t index = 0;
+char data = UART1_InChar();
+        while(data != 0x03 && index < 8){            // keep getting data until string is full or ETX is received
+            if(data != 0x02 && data != 0x0D){        // filter out STX and CR
+                bufPt[index] = data;                            // add character to string
+                index++;
+            }
+            data = UART1_InChar();
+    }
 }
