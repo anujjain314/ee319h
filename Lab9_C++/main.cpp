@@ -35,7 +35,7 @@
 #include "UART1.h"
 #include "FIFO.h"
 
-SlidePot my(150,0);
+SlidePot my(164,19);
 
 extern "C" void DisableInterrupts(void);
 extern "C" void EnableInterrupts(void);
@@ -170,9 +170,11 @@ int main(void){  // valvano version
   EnableInterrupts();
 
   while(1){ 
-      // write this
-
- 
+    char message[8];
+		UART1_InMessage(message);
+		SSD1306_ClearBuffer();
+		SSD1306_OutString(message);
+		SSD1306_OutString((char*)"cm");
   }
 }
 

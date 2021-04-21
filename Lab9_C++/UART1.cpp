@@ -41,21 +41,21 @@ Queue RxFifo;
 void UART1_Init(void){
   SYSCTL_RCGCUART_R |= 0x00000002;  // activate UART1
   SYSCTL_RCGCGPIO_R |= 0x00000004;  // activate port C
-  UART1_CTL_R &= ~0x00000001;    		// disable UART
+  UART1_CTL_R &= ~UART_CTL_UARTEN;    		// disable UART
   UART1_IBRD_R = 5000;     					// IBRD = int(80,000,000/(16*1000)) = int(5000)
   UART1_FBRD_R = 0;     						// FBRD = round(0 * 64) = 0
   UART1_LCRH_R = 0x00000070;  			// 8 bit, no parity bits, one stop, FIFOs
 	
 	UART1_IFLS_R &= ~0x3F;
 	UART1_IFLS_R += UART_IFLS_RX4_8;  // set interrupt to occur when FIFO 1/2 full
-	UART1_IM_R = UART_IM_RXIM;				// enable receiver interrupt
+	UART1_IM_R |= UART_IM_RXIM;				// enable receiver interrupt
 	
-  UART1_CTL_R |= 0x00000001;     		// enable UART
+  UART1_CTL_R |= 0x0301;     		    // enable UART
   GPIO_PORTC_AFSEL_R |= 0x30;    		// enable alt funct on PC5-4
   GPIO_PORTC_DEN_R |= 0x30;      		// configure PC5-4 as UART1
   GPIO_PORTC_PCTL_R = (GPIO_PORTC_PCTL_R&0xFF00FFFF)+0x00220000;
   GPIO_PORTC_AMSEL_R &= ~0x30;   		// disable analog on PC5-4
-	NVIC_PRI1_R = (NVIC_PRI1_R&0xFFFF00FF) | 0x00004000;
+	NVIC_PRI1_R = (NVIC_PRI1_R&0xFF00FFFF) | 0x00400000;
 	NVIC_EN0_R = NVIC_EN0_INT6;
 	EnableInterrupts();
 }
@@ -65,8 +65,9 @@ void UART1_Init(void){
 // spin if software RxFifo is empty
 // Lab 9
 char UART1_InChar(void){
-	while((UART1_FR_R&0x0010) != 0);      // wait until RXFE is 0
-  return((char)(UART1_DR_R&0xFF));
+	char data;
+	while(!RxFifo.Get(&data));  
+  return data;
 }
 // Lab 9
 // check software RxFifo
@@ -94,10 +95,9 @@ uint32_t errorCount = 0;
 void UART1_Handler(void){
 	static uint32_t RxCounter = 0;
   PF1  ^= 0x02; // single toggle debugging
-    // write this
 	if (RxFifo.IsFull()) errorCount++;
 	while ((UART1_FR_R&0x0010) == 0) {
-		char data = UART1_InChar();
+		char data = UART1_DR_R;
 		RxFifo.Put(data);
 		errorCount++;
 	}
@@ -113,13 +113,15 @@ void UART1_Handler(void){
 // Output: Null terminated string
 // removes STX CR ETX
 void UART1_InMessage(char *bufPt){
-uint8_t index = 0;
-char data = UART1_InChar();
-        while(data != 0x03 && index < 8){            // keep getting data until string is full or ETX is received
-            if(data != 0x02 && data != 0x0D){        // filter out STX and CR
-                bufPt[index] = data;                            // add character to string
-                index++;
-            }
-            data = UART1_InChar();
+	uint8_t index = 0;
+	char data = UART1_InChar();
+	while(data != STX) {data = UART1_InChar();} // message starts when STX is encountered
+  while(data != ETX && index < 8){            // keep getting data until string is full or ETX is received
+		if(data != CR){                           // filter out CR
+			bufPt[index] = data;                    // add character to string
+      index++;
     }
+    data = UART1_InChar();
+  }
+	bufPt[index] = '\0';
 }

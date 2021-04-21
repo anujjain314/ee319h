@@ -50,7 +50,7 @@ bool Queue::IsEmpty(void){
   // To check whether Queue is full or not
 bool Queue::IsFull(void){
    // write this
-	if ((PutI + 1) % 32 == GetI) return true;
+	if ((PutI + 1) % FIFOSIZE == GetI) return true;
   else return false;
 }
 
@@ -59,7 +59,7 @@ bool Queue::Put(char x){
    // write this
 	if (Queue::IsFull()) return false;
 	Buf[PutI] = x;
-	PutI = (PutI + 1) % 32;
+	PutI = (PutI + 1) % FIFOSIZE;
   return true;
 }
 
@@ -68,7 +68,7 @@ bool Queue::Get(char *pt){
    // write this
 	if (Queue::IsEmpty()) return false;
 	*pt = Buf[GetI];
-	GetI = (GetI + 1) % 32;
+	GetI = (GetI + 1) % FIFOSIZE;
   return true;
 }
 
@@ -78,7 +78,7 @@ bool Queue::Get(char *pt){
      This is not a standard function for Queue implementation. 
   */
 void Queue::Print(void){
-	for (int i = GetI; i < PutI; i = (i+1)%32) {
+	for (int i = GetI; i < PutI; i = (i+1)%FIFOSIZE) {
 		SSD1306_OutChar(Buf[i]);
 	}
 }
