@@ -95,11 +95,12 @@ uint32_t errorCount = 0;
 void UART1_Handler(void){
 	static uint32_t RxCounter = 0;
   PF1  ^= 0x02; // single toggle debugging
-	if (RxFifo.IsFull()) errorCount++;
 	while ((UART1_FR_R&0x0010) == 0) {
-		char data = UART1_DR_R;
-		RxFifo.Put(data);
-		errorCount++;
+		if (RxFifo.IsFull()) errorCount++;
+		else{
+			char data = UART1_DR_R;
+			RxFifo.Put(data);
+		}
 	}
 	RxCounter++;
 	UART1_ICR_R = 0x10; // this clears bit 4 (RXRIS) in the RIS register
@@ -116,7 +117,7 @@ void UART1_InMessage(char *bufPt){
 	uint8_t index = 0;
 	char data = UART1_InChar();
 	while(data != STX) {data = UART1_InChar();} // message starts when STX is encountered
-  while(data != ETX && index < 8){            // keep getting data until string is full or ETX is received
+  while(data != ETX && index < 7){            // keep getting data until string is full or ETX is received
 		if(data != CR){                           // filter out CR
 			bufPt[index] = data;                    // add character to string
       index++;

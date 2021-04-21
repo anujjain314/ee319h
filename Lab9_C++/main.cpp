@@ -172,7 +172,7 @@ int main(void){  // valvano version
   while(1){ 
     char message[8];
 		UART1_InMessage(message);
-		SSD1306_ClearBuffer();
+		SSD1306_SetCursor(0,0);
 		SSD1306_OutString(message);
 		SSD1306_OutString((char*)"cm");
   }
