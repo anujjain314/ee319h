@@ -50,7 +50,7 @@ bool Queue::IsEmpty(void){
   // To check whether Queue is full or not
 bool Queue::IsFull(void){
    // write this
-	if ((PutI + 1) % 10 == GetI) return true;
+	if ((PutI + 1) % 32 == GetI) return true;
   else return false;
 }
 
@@ -59,15 +59,16 @@ bool Queue::Put(char x){
    // write this
 	if (Queue::IsFull()) return false;
 	Buf[PutI] = x;
-  return false;
+	PutI = (PutI + 1) % 32;
+  return true;
 }
 
   // Removes an element in Queue from front end. 
 bool Queue::Get(char *pt){
    // write this
 	if (Queue::IsEmpty()) return false;
-	Buf[GetI] = *pt;
-	GetI = (GetI + 1) % 10;
+	*pt = Buf[GetI];
+	GetI = (GetI + 1) % 32;
   return true;
 }
 
@@ -77,7 +78,7 @@ bool Queue::Get(char *pt){
      This is not a standard function for Queue implementation. 
   */
 void Queue::Print(void){
-	for (int i = 0; i <= GetI; i++) {
+	for (int i = GetI; i < PutI; i = (i+1)%32) {
 		SSD1306_OutChar(Buf[i]);
 	}
 }

@@ -47,7 +47,8 @@ void UART1_Init(void){
   UART1_LCRH_R = 0x00000070;  			// 8 bit, no parity bits, one stop, FIFOs
 	
 	UART1_IFLS_R &= ~0x3F;
-	UART1_IFLS_R += (UART_IFLS_TX1_8 | UART_IFLS_RX1_8);
+	UART1_IFLS_R += UART_IFLS_RX4_8;  // set interrupt to occur when FIFO 1/2 full
+	UART1_IM_R = UART_IM_RXIM;				// enable receiver interrupt
 	
   UART1_CTL_R |= 0x00000001;     		// enable UART
   GPIO_PORTC_AFSEL_R |= 0x30;    		// enable alt funct on PC5-4
